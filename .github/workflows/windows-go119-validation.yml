@@ -1,0 +1,43 @@
+name: Windows Go 1.19 comparison
+
+on:
+  push:
+    branches: [validation/windows-go119-head-base]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Windows Go 1.19 (${{ matrix.label }})
+    runs-on: windows-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: head
+            sha: ce5109f40ec8c07839daa55a114461295c8877d2
+          - label: base
+            sha: 828abff685deae97e60d299b1cdfcefabfeb44dc
+    steps:
+      - name: Install Go 1.19.13
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c
+        with:
+          go-version: 1.19.13
+          cache: false
+      - name: Checkout exact revision
+        uses: actions/checkout@4f1f4aec02e41874fa0262ea8ff5172d7978ad1e
+        with:
+          ref: ${{ matrix.sha }}
+          persist-credentials: false
+      - name: Record environment
+        run: |
+          git rev-parse HEAD
+          go version
+          go env
+      - name: Test
+        run: go test ./...
+      - name: Diagnose failed test
+        if: failure()
+        run: go test -v ./...
